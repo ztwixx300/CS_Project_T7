@@ -1,0 +1,6 @@
+# Ignore the entire data directory contents
+data/
+*.csv
+
+# Keep the data folder structure in the repo without committing any files
+!data/.gitkeep
