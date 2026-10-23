@@ -1,0 +1,39 @@
+.splash {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(160deg, #0f2027, #203a43, #2c5364);
+  color: #ffffff;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.splash-title {
+  font-size: 3rem;
+  margin: 0 0 0.5rem;
+}
+
+.splash-subtitle {
+  font-size: 1.15rem;
+  margin: 0 0 2rem;
+  opacity: 0.8;
+}
+
+.splash-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: #81e6d9;
+}
+
+.splash-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.splash-status {
+  margin-top: 1.5rem;
+  min-height: 1.5rem;
+  opacity: 0.85;
+}
