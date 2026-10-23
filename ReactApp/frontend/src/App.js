@@ -102,6 +102,32 @@ function App() {
           </Table>
         </TableContainer>
       )}
+
+          {phase === 'done' && (
+              <div className="disclaimer">
+                  <p>
+                      <strong>Note:</strong> Information provided by this tool is based on publicly available data provided by the following sources and are subject to their terms of use. The tool is intended for informational purposes only and should not be used as a substitute for professional advice or judgment. Users are encouraged to consult official sources for current conditions in their area.
+                  </p>
+
+                  <ul>
+                      <li>
+                          <a
+                              href="https://www.epa.gov/outdoor-air-quality-data"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                          >
+                              U.S. EPA AirData
+                          </a>
+                          {' '}- historical air quality monitoring data.
+                      </li>
+                  </ul>
+
+                  <p className="source-note">
+                      Tool made as part of 2026 UT Dallas Capstone.
+                  </p>
+              </div>
+          )}
+
     </div>
   );
 }

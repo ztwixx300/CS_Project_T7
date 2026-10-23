@@ -37,3 +37,43 @@
   min-height: 1.5rem;
   opacity: 0.85;
 }
+
+
+
+.disclaimer {
+    margin-top: 16px;
+    padding: 0 4px;
+    text-align: left;
+    color: #777;
+    font-size: 0.78rem;
+    line-height: 1.5;
+
+    border-top: 1px solid #ddd;
+    padding-top: 12px;
+}
+
+.disclaimer p {
+    margin: 6px 0;
+    line-height: 1.5;
+}
+
+.disclaimer ul {
+    margin: 4px 0;
+    padding-left: 20px;
+    line-height: 1.6;
+}
+
+.disclaimer a {
+    color: #6685a3;
+    text-decoration: underline;
+}
+
+.disclaimer a:hover {
+    color: #426582;
+}
+
+.disclaimer .source-note {
+    margin-bottom: 0;
+    color: #888;
+    font-size: 0.72rem;
+}
