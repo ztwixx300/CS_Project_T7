@@ -3,9 +3,10 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import xgboost as xgb
+import optuna 
 
 # Load and concatenate all csv files
-file_list = sorted(glob.glob('aqidaily202*.csv'))
+file_list = sorted(glob.glob('data/aqidaily202*.csv'))
 dfs = [pd.read_csv(f) for f in file_list]
 df = pd.concat(dfs, ignore_index=True)
 
@@ -80,30 +81,58 @@ dtrain = xgb.DMatrix(X_train, label=y_train)
 dval = xgb.DMatrix(X_val, label=y_val)
 dtest = xgb.DMatrix(X_test, label=y_test)
 
-# Hyperparameters
-params = {
-    'objective': 'reg:squarederror',
-    'eval_metric': 'mae',
-    'max_depth': 4,
-    'learning_rate': 0.03,
-    'subsample': 0.8,
-    'colsample_bytree' : 0.8,
-}
+def objective(trial): 
+    # Hyperparameter search space
+    param_grid = {
+        'objective': 'reg:squarederror',
+        'eval_metric': 'mae',
+        # Tree complexity
+        'max_depth': trial.suggest_int('max_depth', 3, 10),
+        'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+        'gamma': trial.suggest_float('gamma', 1e-8, 1.0, log=True), 
+        # Overfitting prevention
+        'subsample': trial.suggest_float('subsample', 0.5, 1.0),
+        'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
+        # Learning speed
+        'learning_rate': trial.suggest_float('learning_rate', 0.005, 0.1, log=True)
+    }
 
-evals = [(dtrain, 'train'), (dval, 'val')]
+    # Train model inside trial
+    model = xgb.train(
+        params=param_grid, 
+        dtrain=dtrain, 
+        num_boost_round=1000,
+        evals=[(dtrain, 'train'), (dval, 'val')],
+        early_stopping_rounds=30,
+        verbose_eval=False
+    )
+    # Return best validation MAE to Optuna so it can minimize it
+    return model.best_score
 
-# Train with early stopping to avoid overfit
-model = xgb.train(
-    params=params, 
+# Create and run optimization study 
+study = optuna.create_study(direction='minimize')
+study.optimize(objective, n_trials=50)
+
+# Extract best parameters
+print("\nBest parameters found by Optuna:")
+for key, value in study.best_params.items():
+    print(f"  {key}: {value}")
+
+# Retrain model using best parameters
+best_params = study.best_params
+best_params['objective'] = 'reg:squarederror'
+best_params['eval_metric'] = 'mae'
+
+final_model = xgb.train(
+    params=best_params, 
     dtrain=dtrain, 
     num_boost_round=1000,
-    evals=evals,
+    evals=[(dtrain, 'train'), (dval, 'val')],
     early_stopping_rounds=30,
     verbose_eval=50
 )
-
 # Results
-preds = model.predict(dtest)
+preds = final_model.predict(dtest)
 print(f'Test R²:   {r2_score(y_test, preds):.4f}')
 print(f'Test MAE:  {mean_absolute_error(y_test, preds):.2f} AQI points')
 print(f'Test RMSE: {np.sqrt(mean_squared_error(y_test, preds)):.2f} AQI points')
