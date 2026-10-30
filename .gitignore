@@ -8,3 +8,6 @@ data/
 
 # Keep the data folder structure in the repo without committing any files
 !data/.gitkeep
+
+.vs/
+/ReactApp/backend/.venv/

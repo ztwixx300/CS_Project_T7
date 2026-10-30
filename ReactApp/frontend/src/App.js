@@ -13,7 +13,15 @@ import {
   TextField,
 } from "@mui/material";
 import './App.css';
-
+function getAirQuality(aqi) {
+    if (aqi == null) {return { label: 'Unavailable', color: '#eeeeee' };}
+    if (aqi <= 50) {return { label: 'Good', color: '#c8e6c9' };}
+    if (aqi <= 100) {return { label: 'Moderate', color: '#fff9c4' };}
+    if (aqi <= 150) {return { label: 'Unhealthy Depending', color: '#ffe0b2' };}
+    if (aqi <= 200) {return { label: 'Unhealthy', color: '#ffcdd2' };}
+    if (aqi <= 300) {return { label: 'Very Unhealthy', color: '#e1bee7' };}
+    return { label: 'Hazardous', color: '#d7a0a0' };
+}
 function App() {
   const [phase, setPhase] = useState('idle')
   const [forecast, setForecast] = useState([])
@@ -86,18 +94,32 @@ function App() {
                 <TableCell align="right">Ozone</TableCell>
                 <TableCell align="right">CO</TableCell>
                 <TableCell align="right">NO2</TableCell>
+                <TableCell align="right">Overall AQI</TableCell> {/*for the aqi val*/}
               </TableRow>
             </TableHead>
             <TableBody>
-              {forecast.map((day) => (
-                <TableRow key={day.date}>
+              {forecast.map((day) => {
+                const airQuality = getAirQuality(day.overall_aqi);
+
+                return (
+                  <TableRow
+                    key={day.date}
+                    sx={{
+                      backgroundColor: airQuality.color,
+                      '&:hover': {
+                        filter: 'brightness(0.96)',
+                      },
+                    }}
+                   >
                   <TableCell>{day.date}</TableCell>
                   <TableCell align="right">{day.pm25}</TableCell>
                   <TableCell align="right">{day.ozone}</TableCell>
                   <TableCell align="right">{day.co}</TableCell>
                   <TableCell align="right">{day.no2}</TableCell>
-                </TableRow>
-              ))}
+                  <TableCell align="right">{day.overall_aqi ?? 'N/A'} ({airQuality.label})</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>

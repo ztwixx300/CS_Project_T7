@@ -23,6 +23,7 @@ def get_peak_days(days=7):
             'ozone': _clean(row['Ozone']),
             'co': _clean(row['CO']),
             'no2': _clean(row['NO2']),
+            'overall_aqi': _clean(row['Overall AQI Value']),
         }
         for _, row in top.iterrows()
     ]
