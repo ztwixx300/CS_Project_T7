@@ -45,16 +45,12 @@ df['pm25_trend'] = df['PM25_lag1'] - df['PM25_lag2']
 df_clean = df.dropna().reset_index(drop=True)
 
 feature_cols = [
-    'year',
     'month',
     'day_of_week',
     'sin_day',
     'cos_day',
     'PM25_lag1',
     'PM25_lag2',
-    'Ozone_lag1',
-    'NO2_lag1',
-    'CO_lag1',
     'pm25_roll_mean_3d',
     'pm25_roll_mean_7d',
     'pm25_roll_std_7d',
@@ -62,10 +58,9 @@ feature_cols = [
 ]
 
 # Select different years for different data sets without overlap
-train_mask = df_clean['year'].between(2019, 2023)
+train_mask = df_clean['year'].between(2015, 2023)
 val_mask = df_clean['year'].isin([2024, 2025])
 test_mask = df_clean['year'] == 2026
-
 
 X_train, y_train = (
     df_clean.loc[train_mask, feature_cols],
@@ -90,6 +85,7 @@ def objective(trial):
         'max_depth': trial.suggest_int('max_depth', 3, 10),
         'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
         'gamma': trial.suggest_float('gamma', 1e-8, 1.0, log=True), 
+        'seed': 42,
         # Overfitting prevention
         'subsample': trial.suggest_float('subsample', 0.5, 1.0),
         'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
@@ -110,8 +106,8 @@ def objective(trial):
     return model.best_score
 
 # Create and run optimization study 
-study = optuna.create_study(direction='minimize')
-study.optimize(objective, n_trials=50)
+study = optuna.create_study(direction='minimize', sampler=optuna.samplers.TPESampler(seed=42))
+study.optimize(objective, n_trials=150)
 
 # Extract best parameters
 print("\nBest parameters found by Optuna:")
