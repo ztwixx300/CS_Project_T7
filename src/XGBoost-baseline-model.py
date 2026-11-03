@@ -3,22 +3,24 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import xgboost as xgb
-import optuna 
+import optuna
 
 # Load and concatenate all csv files
 file_list = sorted(glob.glob('data/aqidaily*.csv'))
 dfs = [pd.read_csv(f) for f in file_list]
 df = pd.concat(dfs, ignore_index=True)
 
-# Sort dates 
+# Sort dates
 df['Date'] = pd.to_datetime(df['Date'])
 df = (
     df.sort_values('Date')
     .drop_duplicates(subset=['Date'])
+    .replace('.', np.nan)
+    .ffill()
     .reset_index(drop=True)
 )
 
-# Cyclic time features 
+# Cyclic time features
 df['year'] = df['Date'].dt.year
 df['month'] = df['Date'].dt.month
 df['day_of_week'] = df['Date'].dt.day_of_week
@@ -76,7 +78,7 @@ dtrain = xgb.DMatrix(X_train, label=y_train)
 dval = xgb.DMatrix(X_val, label=y_val)
 dtest = xgb.DMatrix(X_test, label=y_test)
 
-def objective(trial): 
+def objective(trial):
     # Hyperparameter search space
     param_grid = {
         'objective': 'reg:squarederror',
@@ -84,19 +86,20 @@ def objective(trial):
         # Tree complexity
         'max_depth': trial.suggest_int('max_depth', 3, 10),
         'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
-        'gamma': trial.suggest_float('gamma', 1e-8, 1.0, log=True), 
+        'gamma': trial.suggest_float('gamma', 1e-8, 1.0, log=True),
         'seed': 42,
         # Overfitting prevention
         'subsample': trial.suggest_float('subsample', 0.5, 1.0),
         'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
         # Learning speed
-        'learning_rate': trial.suggest_float('learning_rate', 0.005, 0.1, log=True)
+        'learning_rate': trial.suggest_float('learning_rate', 0.005, 0.1, log=True),
+        #'device': 'cuda'
     }
 
     # Train model inside trial
     model = xgb.train(
-        params=param_grid, 
-        dtrain=dtrain, 
+        params=param_grid,
+        dtrain=dtrain,
         num_boost_round=1000,
         evals=[(dtrain, 'train'), (dval, 'val')],
         early_stopping_rounds=30,
@@ -105,7 +108,7 @@ def objective(trial):
     # Return best validation MAE to Optuna so it can minimize it
     return model.best_score
 
-# Create and run optimization study 
+# Create and run optimization study
 study = optuna.create_study(direction='minimize', sampler=optuna.samplers.TPESampler(seed=42))
 study.optimize(objective, n_trials=150)
 
@@ -118,10 +121,12 @@ for key, value in study.best_params.items():
 best_params = study.best_params
 best_params['objective'] = 'reg:squarederror'
 best_params['eval_metric'] = 'mae'
+#best_params['device'] = 'cuda'
+best_params['seed'] = 42
 
 final_model = xgb.train(
-    params=best_params, 
-    dtrain=dtrain, 
+    params=best_params,
+    dtrain=dtrain,
     num_boost_round=1000,
     evals=[(dtrain, 'train'), (dval, 'val')],
     early_stopping_rounds=30,
