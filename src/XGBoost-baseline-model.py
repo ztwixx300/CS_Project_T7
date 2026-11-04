@@ -25,6 +25,10 @@ df['year'] = df['Date'].dt.year
 df['month'] = df['Date'].dt.month
 df['day_of_week'] = df['Date'].dt.day_of_week
 # Using sin and cos to connect Dec 31 to Jan 1
+df['sin_month'] = np.sin(2 * np.pi * df['Date'].dt.month / 12.0)
+df['cos_month'] = np.cos(2 * np.pi * df['Date'].dt.month / 12.0)
+df['sin_day_of_week'] = np.sin(2 * np.pi * df['Date'].dt.day_of_week / 7.0)
+df['cos_day_of_week'] = np.cos(2 * np.pi * df['Date'].dt.day_of_week / 7.0)
 df['sin_day'] = np.sin(2 * np.pi * df['Date'].dt.dayofyear / 365.25)
 df['cos_day'] = np.cos(2 * np.pi * df['Date'].dt.dayofyear / 365.25)
 
@@ -41,7 +45,7 @@ df['pm25_roll_mean_7d'] = df['PM25_lag1'].rolling(window=7).mean()
 df['pm25_roll_std_7d'] = df['PM25_lag1'].rolling(window=7).std()
 
 # Momentum over last 2 days
-df['pm25_trend'] = df['PM25_lag1'] - df['PM25_lag2']
+df['pm25_trend'] = df['PM25'] - df['PM25_lag2']
 
 # Drop initial rows with NaN caused by rolling windows
 df_clean = df.dropna().reset_index(drop=True)
@@ -49,6 +53,10 @@ df_clean = df.dropna().reset_index(drop=True)
 feature_cols = [
     'month',
     'day_of_week',
+    'sin_month',
+    'cos_month',
+    'sin_day_of_week',
+    'cos_day_of_week',
     'sin_day',
     'cos_day',
     'PM25_lag1',
@@ -93,7 +101,6 @@ def objective(trial):
         'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
         # Learning speed
         'learning_rate': trial.suggest_float('learning_rate', 0.005, 0.1, log=True),
-        #'device': 'cuda'
     }
 
     # Train model inside trial
@@ -121,7 +128,6 @@ for key, value in study.best_params.items():
 best_params = study.best_params
 best_params['objective'] = 'reg:squarederror'
 best_params['eval_metric'] = 'mae'
-#best_params['device'] = 'cuda'
 best_params['seed'] = 42
 
 final_model = xgb.train(
