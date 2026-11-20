@@ -86,6 +86,11 @@ function App() {
                   onChange={(event) => {
                       setPostalCode(event.target.value.replace(/\D/g, '').slice(0, 5));
                   }}
+                  onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                          handlGenerate();
+                      }
+                  }}
                   placeholder="Enter a 5-digit ZIP code"
               />
           </Paper>
